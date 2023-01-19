@@ -39,61 +39,44 @@ def preprocess_url(url: str) -> str:
 	- `twitter.com` -> `nitter.net`
 	"""
 	# match group of digits and decimal point
-	match_arxiv = re.search(r'arxiv\.org/pdf/(\d+\.\d+)\.pdf', url)
+	m_arxiv = re.search(r'arxiv\.org/pdf/(\d+\.\d+)\.pdf', url)
 	# math any text after `twitter.com/`
-	match_twitter = re.search(r'twitter\.com/(.+)', url)
-	if match_arxiv:
-		return f"https://arxiv.org/abs/{match_arxiv.group(1)}"
-	elif match_twitter:
-		return f"https://nitter.net/{match_twitter.group(1)}"
+	m_twitter = re.search(r'twitter\.com/(.+)', url)
+	if m_arxiv:
+		return f"https://arxiv.org/abs/{m_arxiv.group(1)}"
+	elif m_twitter:
+		return f"https://nitter.net/{m_twitter.group(1)}"
 	else:
 		return url
 
 
 def get_arxiv_meta(soup: BeautifulSoup) -> dict:
-	"""get meta data from an arxiv URL. returns a dict"""
-	output: dict = dict()
-	# get the submission date, author list, subjects, and author list
-	# submission date
-	submission_date_raw: str = bs_find_text(soup, 'div', class_="dateline")
-	# process: "[Submitted on 24 May 2022 (<a href="https://arxiv.org/abs/2205.12411v1">v1</a>), last revised 9 Jul 2022 (this version, v4)]"
-	# -> {"submitted": "24 May 2022", "revised": "9 Jul 2022"}
-	submission_date_re = re.search(r'\[(.+)\]', submission_date_raw)
-	if submission_date_re:
-		try:
-			submission_date_str: str = submission_date_re.group(1)
-			output["submitted"] = dateparser.parse(
-				re.search(r'Submitted on (.+?) \(', submission_date_str).group(1)
-			).strftime("%Y-%m-%d")
-		except AttributeError:
-			# if the regex fails, just use the raw string
-			output["dates"] = submission_date_raw
-		
-		try:
-			output["revised"] = dateparser.parse(
-				re.search(r'last revised (.+?) \(this', submission_date_str).group(1)
-			).strftime("%Y-%m-%d")
-		except AttributeError:
-			pass
-	
-	# author list
-	author_list = bs_find_text(soup, 'div', class_="authors")
-	output["author_list"] = [
-		name.strip() 
-		for name in
-		author_list.removeprefix("Authors:  ").split(",")
-	]
+	"""get metadata from an arxiv URL. returns a dict"""
+	output: dict = dict(
+		authors = list(),
+	)
 
-	# subjects
+	# use the meta tags for basic citation info
+	meta_tags: list[BeautifulSoup] = soup.find_all('meta')
+	for tag in meta_tags:
+		match tag.get('name'):
+			case 'citation_title':
+				output["title"] = tag.get('content')
+			case 'citation_author':
+				output["authors"].append(tag.get('content'))
+			case 'citation_date':
+				output["submitted"] = tag.get('content').replace('/', '-')
+			case 'citation_online_date':
+				output["revised"] = tag.get('content').replace('/', '-')
+			case 'citation_abstract':
+				output["abstract"] = tag.get('content').replace('\n', ' ')
+
+	# subjects need to be extracted from the table
 	subjects = bs_find_text(soup, 'td', class_="tablecell subjects")
 	output["subjects"] = [
 		x.strip()
 		for x in subjects.split(";")
 	]
-
-	# abstract
-	abstract = bs_find_text(soup, 'blockquote', class_="abstract mathjax")
-	output["abstract"] = abstract.removeprefix("Abstract:  ").strip().replace("\n", " ")
 
 	return output
 	
