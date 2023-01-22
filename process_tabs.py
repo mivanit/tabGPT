@@ -33,24 +33,31 @@ def bs_find_text(soup: BeautifulSoup, *args, **kwargs) -> str:
 
 
 def preprocess_url(url: str) -> str:
-	"""preprocess URL according to certain rules (using regex)
+	"""preprocess URL according to certain rules
 	
 	- `*arxiv.org/pdf/NNNN.pdf` -> `*arxiv.org/abs/NNNN`
 	- `twitter.com` -> `nitter.net`
 	"""
+	# remove http prefix (provides no info, wastes tokens)
+	url = url.removeprefix("http://").removeprefix("https://")
+
 	# match group of digits and decimal point
 	m_arxiv = re.search(r'arxiv\.org/pdf/(\d+\.\d+)\.pdf', url)
 	# math any text after `twitter.com/`
 	m_twitter = re.search(r'twitter\.com/(.+)', url)
 	if m_arxiv:
-		return f"https://arxiv.org/abs/{m_arxiv.group(1)}"
+		return f"arxiv.org/abs/{m_arxiv.group(1)}"
 	elif m_twitter:
-		return f"https://nitter.net/{m_twitter.group(1)}"
+		return f"nitter.net/{m_twitter.group(1)}"
 	else:
 		return url
 
 
-def get_arxiv_meta(soup: BeautifulSoup) -> dict:
+def get_arxiv_meta(
+		soup: BeautifulSoup, 
+		# filter_keys: typing.Callable[[str], bool] = lambda k : True,
+		filter_keys: typing.Callable[[str], bool] = lambda k : k in ("title", "url", "subjects"),
+	) -> dict:
 	"""get metadata from an arxiv URL. returns a dict"""
 	output: dict = dict(
 		authors = list(),
@@ -78,13 +85,17 @@ def get_arxiv_meta(soup: BeautifulSoup) -> dict:
 		for x in subjects.split(";")
 	]
 
-	return output
+	return {
+		k: v
+		for k, v in output.items()
+		if filter_keys(k)
+	}
 	
 
 
 def get_url_meta(url: str) -> dict:
 	url: str = preprocess_url(url)
-	response: requests.Response = requests.get(url)
+	response: requests.Response = requests.get(f"http://{url}")
 	soup: BeautifulSoup|None = BeautifulSoup(response.text, 'html.parser')
 
 	title_obj = bs_find_text(soup, 'title')
@@ -103,7 +114,9 @@ def get_url_meta(url: str) -> dict:
 		del output["headings"]
 
 		output.update(get_arxiv_meta(soup))
-		
+
+	elif len(output["headings"]) == 0:
+		del output["headings"]
 
 	return output
 
