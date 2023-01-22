@@ -33,6 +33,12 @@ class BookmarkFolder:
 			contents = [x.serialize() for x in self.contents],
 		)
 
+	def count_bookmarks(self) -> int:
+		return sum(
+			1 if isinstance(x, Bookmark) else x.count_bookmarks()
+			for x in self.contents
+		)
+
 def process_child(element: PageElement) -> Bookmark|BookmarkFolder:
 	if element.name == "h3":
 
@@ -68,15 +74,13 @@ def process_child(element: PageElement) -> Bookmark|BookmarkFolder:
 		return None
 
 
-def process_bookmark_file(data: str) -> list[Bookmark|BookmarkFolder]:
+def process_bookmark_file(data: str) -> BookmarkFolder:
 
 	# this part is a hack: remove all <DT> and <p> tags, they are useless and complicate things
 	data = data.replace("<DT>", "").replace("<dt>", "").replace("<p>", "").replace("<P>", "")
 	
 	# parse the html
 	soup: BeautifulSoup = BeautifulSoup(data, "html.parser")
-
-	output = list()
 
 	# the structure is now as follows:
 	"""<!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -91,14 +95,25 @@ def process_bookmark_file(data: str) -> list[Bookmark|BookmarkFolder]:
 	..............		
 	"""
 
+	# find title
+	title = soup.find("h1").string
+
 	# the first dl element is the root folder, get the <p> inside it
 	root_folder = soup.find("dl")
+
+
+	output = BookmarkFolder(
+		title = title,
+		add_date = None,
+		last_modified = None,
+		contents = list(),
+	)
 
 	# we want to iterate over all the children of the root folder
 	for child in root_folder.children:
 		p = process_child(child)
 		if p is not None:
-			output.append(p)
+			output.contents.append(p)
 
 	return output
 
@@ -116,5 +131,5 @@ if __name__ == "__main__":
 	import sys
 	bkmks = main(sys.argv[1])
 
-	print(f"{len(bkmks)} bookmarks found", file=sys.stderr)
+	print(f"{bkmks.count_bookmarks()} bookmarks found", file=sys.stderr)
 	print(json.dumps(json_serialize(bkmks), indent="\t"))
