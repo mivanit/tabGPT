@@ -3,6 +3,7 @@
 I've checked, and firefox, edge, and vivaldi all use this format
 """
 
+import sys
 from dataclasses import dataclass, field, asdict
 import warnings
 import json
@@ -28,6 +29,10 @@ class Bookmark:
 			tags = self.tags,
 		)
 
+	@classmethod
+	def load(cls, data: dict) -> "Bookmark":
+		return cls(**data)
+
 @dataclass
 class BookmarkFolder:
 	title: str
@@ -48,27 +53,53 @@ class BookmarkFolder:
 			last_modified = self.last_modified,
 			contents = [x.serialize() for x in self.contents],
 		)
+	
+	@classmethod
+	def load(cls, data: dict) -> "Bookmark":
+		return cls(
+			title = data["title"],
+			add_date = data["add_date"],
+			last_modified = data["last_modified"],
+			contents = [
+				Bookmark.load(x) if "href" in x else BookmarkFolder.load(x) 
+				for x in data["contents"]
+			],
+		)
 
 	def get_child(self, title: str) -> "Bookmark|BookmarkFolder":
+		"""get a child from `contents` by title"""
 		for x in self.contents:
 			if x.title == title:
 				return x
 
 		raise KeyError(f"no child with title {title}")
 
-	def __iter__(self):
+	def __getitem__(self, title: str) -> "Bookmark|BookmarkFolder":
+		return self.get_child(title)
+
+	def iter_bookmarks(self) -> "Bookmark":
 		for x in self.contents:
 			if isinstance(x, Bookmark):
 				yield x
 			else:
-				yield from x
+				yield from x.iter_bookmarks()
 
 	def count_bookmarks(self) -> int:
+		"""counts downstream bookmarks"""
 		return sum(
 			1 if isinstance(x, Bookmark) else x.count_bookmarks()
 			for x in self.contents
 		)
 
+	def get_tree(self) -> dict:
+		"""gets only the downstream folder structure, not the bookmarks"""
+		output: dict = dict()
+		for x in self.contents:
+			if isinstance(x, Bookmark):
+				continue
+			output[x.title] = x.get_tree()
+		return output
+			
 def process_child(element: PageElement) -> Bookmark|BookmarkFolder:
 	if element.name == "h3":
 
@@ -157,7 +188,7 @@ def flatten_bookmarks(folder: BookmarkFolder) -> list[Bookmark]:
 
 	# use the iterator of the folder to get all contained bookmarks, not just direct children
 	bk: Bookmark
-	for bk in folder:
+	for bk in folder.iter_bookmarks():
 		tags_temp: list[str] = list()
 		bk_temp: Bookmark = bk
 		# loop until root
@@ -170,21 +201,55 @@ def flatten_bookmarks(folder: BookmarkFolder) -> list[Bookmark]:
 	
 	return output
 
-def main(fname: str = "data/wip/bookmarks.html"):
+def main(
+		fname: str, 
+		flatten: bool = False, 
+		tree: bool = False,
+		select: str|None = None,
+	):
+	# read file
 	with open(fname, "r", encoding="utf-8") as f:
 		data = f.read()
+	
+	# load as html or json
+	bookmarks: BookmarkFolder
+	if any([
+			fname.endswith(".html"),
+			fname.endswith(".htm"),
+			data.startswith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"),
+		]):
+		bookmarks = process_bookmark_file(data)
+	elif any([
+			fname.endswith(".json"),
+			data.startswith("{"),
+		]):
+		js_temp = json.loads(data)
+		if isinstance(js_temp, list):
+			raise ValueError("json file must contain a single object, not a list. is it a flattened library?")
+		bookmarks = BookmarkFolder.load(json.loads(data))
+	else:
+		raise ValueError(f"unknown file format for {fname}")
 
-	bookmarks = process_bookmark_file(data)
+	print(f"{bookmarks.count_bookmarks()} bookmarks found", file=sys.stderr)
 
-	return bookmarks
+	if flatten:
+		if tree:
+			raise ValueError("cannot flatten and print tree at the same time")
+
+		bookmarks = flatten_bookmarks(bookmarks)
+
+	if select is not None:
+		# select by path
+		path: list[str] = select.split("/")
+		for p in path:
+			bookmarks = bookmarks.get_child(p)
+	
+	if tree:
+		print(json.dumps(bookmarks.get_tree(), indent="\t"))
+
+	else:
+		print(json.dumps(json_serialize(bookmarks), indent="\t"))
 
 if __name__ == "__main__":
-	import sys
-	bkmks = main(sys.argv[1])
-
-	print(f"{bkmks.count_bookmarks()} bookmarks found", file=sys.stderr)
-
-	if ("--flatten" in sys.argv) or ("-f" in sys.argv):
-		bkmks = flatten_bookmarks(bkmks)
-
-	print(json.dumps(json_serialize(bkmks), indent="\t"))
+	import fire
+	fire.Fire(main)
