@@ -1,4 +1,7 @@
-"""reads a bookmark html export in the vivaldi browser format"""
+"""reads a bookmark html export in the `<!DOCTYPE NETSCAPE-Bookmark-file-1>` browser format
+
+I've checked, and firefox, edge, and vivaldi all use this format
+"""
 
 from dataclasses import dataclass, field, asdict
 import warnings
@@ -9,14 +12,21 @@ from muutils.json_serialize import json_serialize
 
 # pylint: disable=missing-class-docstring,pointless-string-statement
 
-@dataclass
+@dataclass(kw_only=True)
 class Bookmark:
 	title: str
 	href: str
 	add_date: int
+	_parent: "BookmarkFolder|None" = field(default=None, repr=False, compare=False)
+	tags: tuple[str]|None = None
 
 	def serialize(self) -> dict:
-		return asdict(self)
+		return dict(
+			title = self.title,
+			href = self.href,
+			add_date = self.add_date,
+			tags = self.tags,
+		)
 
 @dataclass
 class BookmarkFolder:
@@ -24,14 +34,34 @@ class BookmarkFolder:
 	add_date: int|None
 	last_modified: int|None
 	contents: list["Bookmark|BookmarkFolder"]
+	_parent: "BookmarkFolder|None" = field(default=None, repr=False, compare=False)
+
+	_being_serialized: bool = False
 
 	def serialize(self) -> dict:
+		if self._being_serialized:
+			raise RuntimeError("recursive serialization")
+		self._being_serialized = True
 		return dict(
 			title = self.title,
 			add_date = self.add_date,
 			last_modified = self.last_modified,
 			contents = [x.serialize() for x in self.contents],
 		)
+
+	def get_child(self, title: str) -> "Bookmark|BookmarkFolder":
+		for x in self.contents:
+			if x.title == title:
+				return x
+
+		raise KeyError(f"no child with title {title}")
+
+	def __iter__(self):
+		for x in self.contents:
+			if isinstance(x, Bookmark):
+				yield x
+			else:
+				yield from x
 
 	def count_bookmarks(self) -> int:
 		return sum(
@@ -53,8 +83,9 @@ def process_child(element: PageElement) -> Bookmark|BookmarkFolder:
 
 		# preserve order, and loop over both folders and bookmarks at once
 		for child in child_elements.children:
-			p = process_child(child)
+			p: Bookmark|BookmarkFolder|None = process_child(child)
 			if p is not None:
+				p._parent = bkfolder
 				bkfolder.contents.append(p)
 		
 		return bkfolder
@@ -111,13 +142,33 @@ def process_bookmark_file(data: str) -> BookmarkFolder:
 
 	# we want to iterate over all the children of the root folder
 	for child in root_folder.children:
-		p = process_child(child)
+		p: Bookmark|BookmarkFolder|None = process_child(child)
 		if p is not None:
+			p._parent = output
 			output.contents.append(p)
 
 	return output
 
 
+def flatten_bookmarks(folder: BookmarkFolder) -> list[Bookmark]:
+	"""tag bookmark with position in the folder hierarchy"""
+	
+	output: list[Bookmark] = list()
+
+	# use the iterator of the folder to get all contained bookmarks, not just direct children
+	bk: Bookmark
+	for bk in folder:
+		tags_temp: list[str] = list()
+		bk_temp: Bookmark = bk
+		# loop until root
+		while bk_temp._parent is not None:
+			tags_temp.append(bk_temp._parent.title)
+			bk_temp = bk_temp._parent
+		
+		bk.tags = tags_temp[::-1]
+		output.append(bk)
+	
+	return output
 
 def main(fname: str = "data/wip/bookmarks.html"):
 	with open(fname, "r", encoding="utf-8") as f:
@@ -132,4 +183,8 @@ if __name__ == "__main__":
 	bkmks = main(sys.argv[1])
 
 	print(f"{bkmks.count_bookmarks()} bookmarks found", file=sys.stderr)
+
+	if ("--flatten" in sys.argv) or ("-f" in sys.argv):
+		bkmks = flatten_bookmarks(bkmks)
+
 	print(json.dumps(json_serialize(bkmks), indent="\t"))
