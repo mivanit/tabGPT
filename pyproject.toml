@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tabgpt"
+version = "0.1.0"
+description = "use GPT to classify a bunch of your open tabs!"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.11"
+bs4 = "^0.0.1"
+muutils = "^0.1.6"
+fire = "^0.5.0"
+numpy = "^1.24.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
