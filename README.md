@@ -21,6 +21,15 @@ Parse bookmarks file to BookmarkFolder class and serialize to JSON.
 
     ```poetry run python bookmark_utils.py path/to/bookmarks.html```
 
+### preprocess_urls.py
+
+Process a file of URLs and print to stdout a file with the metadata. Input file should contain one URL per line.
+
+1. Export tabs to a file
+    * Firefox: use [Export Tab URLs](https://addons.mozilla.org/en-GB/firefox/addon/export-tabs-urls-and-titles/) extension
+1. Run preprocess_urls
+
+    ```pipenv run python preprocess_urls.py path/to/tabs_file.txt --output_format=[json|yaml|yml]```
 
 ### clasify_tabs
 
