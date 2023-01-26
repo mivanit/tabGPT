@@ -12,8 +12,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # load model as global variable
 # ==============================
-TOKENIZER : AutoTokenizer
-MODEL : AutoModelForCausalLM
+TOKENIZER: AutoTokenizer
+MODEL: AutoModelForCausalLM
 if not typing.TYPE_CHECKING:
     # dont load the model if we are just type checking
     # TOKENIZER = GPT2Tokenizer.from_pretrained('gpt2')
@@ -29,33 +29,40 @@ if not typing.TYPE_CHECKING:
 
 # helper functions
 # ==============================
-def generate_continuation(prompt : str, max_length : int = 5, stop_token : str|None = None) -> str:
-    input_ids : torch.Tensor = TOKENIZER.encode(prompt, return_tensors="pt")
+def generate_continuation(
+    prompt: str, max_length: int = 5, stop_token: str | None = None
+) -> str:
+    input_ids: torch.Tensor = TOKENIZER.encode(prompt, return_tensors="pt")
     generated_text_ids = MODEL.generate(
-        input_ids = input_ids.to(device),
-        max_length = max_length+len(input_ids[0]), 
-        do_sample = False,
+        input_ids=input_ids.to(device),
+        max_length=max_length + len(input_ids[0]),
+        do_sample=False,
     )
-    generated_text : str = TOKENIZER.decode(generated_text_ids[0], clean_up_tokenization_spaces=True)
-    post_prompt_text : str = generated_text[len(TOKENIZER.decode(input_ids[0], clean_up_tokenization_spaces=True)):]
-    return post_prompt_text[:post_prompt_text.find(stop_token) if stop_token else None]
+    generated_text: str = TOKENIZER.decode(
+        generated_text_ids[0], clean_up_tokenization_spaces=True
+    )
+    post_prompt_text: str = generated_text[
+        len(TOKENIZER.decode(input_ids[0], clean_up_tokenization_spaces=True)) :
+    ]
+    return post_prompt_text[: post_prompt_text.find(stop_token) if stop_token else None]
 
-def generate(prompt : str, max_length : int = 5, stop_token : str|None = None) -> str:
+
+def generate(prompt: str, max_length: int = 5, stop_token: str | None = None) -> str:
     return prompt + generate_continuation(prompt, max_length, stop_token)
 
 
-def get_logits_and_tokens(text : str):
-    input_ids : torch.Tensor = TOKENIZER.encode(text, return_tensors="pt")
-    tokens : list[str] = [TOKENIZER.decode([input_id]) for input_id in input_ids[0]]
+def get_logits_and_tokens(text: str):
+    input_ids: torch.Tensor = TOKENIZER.encode(text, return_tensors="pt")
+    tokens: list[str] = [TOKENIZER.decode([input_id]) for input_id in input_ids[0]]
     output = MODEL(input_ids.to(device))
     return output.logits[0][:-1], tokens
 
 
 def test_generation(
-        EXAMPLE_PROMPT : str = """Horrible: negative\nGreat: positive\nBad:""",
-        stop_token = "\n",
-    ):
-    example_gen : str = generate(EXAMPLE_PROMPT, stop_token = stop_token)
+    EXAMPLE_PROMPT: str = """Horrible: negative\nGreat: positive\nBad:""",
+    stop_token="\n",
+):
+    example_gen: str = generate(EXAMPLE_PROMPT, stop_token=stop_token)
     print(example_gen)
 
     logits, tokens = get_logits_and_tokens(example_gen)
@@ -63,18 +70,24 @@ def test_generation(
     negative_prob = last_token_probs[TOKENIZER.encode(" negative")[0]]
     positive_prob = last_token_probs[TOKENIZER.encode(" positive")[0]]
 
-    print(f"tokens: {tokens}\nnegative prob: {negative_prob}\npositive prob: {positive_prob}")
+    print(
+        f"tokens: {tokens}\nnegative prob: {negative_prob}\npositive prob: {positive_prob}"
+    )
 
-def test_generation_from_file(filename : str = "temp.txt"):
+
+def test_generation_from_file(filename: str = "temp.txt"):
     with open(filename, "r") as f:
-        prompt : str = f.read()
-    
-    test_generation(prompt, stop_token = "\n")
+        prompt: str = f.read()
+
+    test_generation(prompt, stop_token="\n")
 
 
 if __name__ == "__main__":
     import fire
-    fire.Fire(dict(
-        gen = test_generation,
-        gen_file = test_generation_from_file,
-    ))
+
+    fire.Fire(
+        dict(
+            gen=test_generation,
+            gen_file=test_generation_from_file,
+        )
+    )

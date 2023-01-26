@@ -14,3 +14,9 @@ _Use GPT to classify a bunch of your browser tabs!_
 * Install dependencies
 
     ```pip install -r requirements.txt```
+
+
+## Testing & Static analysis
+
+## Run formatter
+```make format```
