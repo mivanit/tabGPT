@@ -1,6 +1,19 @@
 # tabGPT
 
-_Use GPT to classify a bunch of your open tabs!_
+_Use GPT to classify a bunch of your browser tabs!_
+
+## Setup
+
+* Install [PyTorch](https://pytorch.org/get-started/locally/) to your global python
+* Create venv and allow it to access global packages
+
+    ```python -m venv venv --system-site-packages```
+* Activate venv
+
+    ```source venv/bin/activate```
+* Install dependencies
+
+    ```pip install -r requirements.txt```
 
 ### bookmark_utils
 
@@ -39,3 +52,4 @@ Currently this file does not classify tabs. It generates the next tokens in a se
 1. Run classify_tabs:
 
    ```poetry run python classify_tabs.py gen_file```
+

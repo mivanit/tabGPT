@@ -4,7 +4,6 @@ import re
 import typing
 
 from bs4 import BeautifulSoup
-import openai
 import yaml
 from tqdm import tqdm
 import dateparser
