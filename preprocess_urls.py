@@ -123,8 +123,13 @@ def get_url_meta(url: str) -> dict:
 # def gpt_classify_meta(meta: dict) -> list[str]:
 # 	"""classify URL meta using GPT-3. returns a list of tags"""
 
-def process_urls(file: str, format: typing.Literal['json', 'yaml', 'yml']) -> str:
-	"""process a file of URLs and print to stdout a yaml file with the meta data"""
+def process_urls(file: str, output_format: typing.Literal['json', 'yaml', 'yml']) -> str:
+	"""
+	Process a file of URLs and print to stdout a file with the metadata.
+	Parameters:
+		file (str): a file with 1 URL on each line
+		output_format: format to use when writing the output
+	"""
 	with open(file) as f:
 		urls: list[str] = [line.strip() for line in f.readlines()]
 	
@@ -135,9 +140,9 @@ def process_urls(file: str, format: typing.Literal['json', 'yaml', 'yml']) -> st
 		meta.append(get_url_meta(url))
 
 	# enforce this key order: url, title, headings
-	if format == 'json':
+	if output_format == 'json':
 		print(json.dumps(meta, indent="  "))
-	elif format in ['yaml', 'yml']:
+	elif output_format in ['yaml', 'yml']:
 		print(yaml.dump(meta, sort_keys=False))
 	
 
