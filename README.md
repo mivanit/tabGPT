@@ -15,6 +15,12 @@ _Use GPT to classify a bunch of your browser tabs!_
 
     ```pip install -r requirements.txt```
 
+
+## Testing & Static analysis
+
+## Run formatter
+```make format```
+
 ### bookmark_utils
 
 Parse bookmarks file to BookmarkFolder class and serialize to JSON. Print result to STDOUT.
