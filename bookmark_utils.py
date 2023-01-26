@@ -8,8 +8,9 @@ from dataclasses import dataclass, field, asdict
 import warnings
 import json
 
-from bs4 import BeautifulSoup, PageElement
-from muutils.json_serialize import json_serialize
+from typing import Iterator, List
+from bs4 import BeautifulSoup, PageElement  # type: ignore[import]
+from muutils.json_serialize import json_serialize  # type: ignore[import]
 
 # pylint: disable=missing-class-docstring,pointless-string-statement
 
@@ -20,7 +21,7 @@ class Bookmark:
     href: str
     add_date: int
     _parent: "BookmarkFolder|None" = field(default=None, repr=False, compare=False)
-    tags: tuple[str] | None = None
+    tags: List[str] | None = None
 
     def serialize(self) -> dict:
         return dict(
@@ -57,7 +58,7 @@ class BookmarkFolder:
         )
 
     @classmethod
-    def load(cls, data: dict) -> "Bookmark":
+    def load(cls, data: dict) -> "BookmarkFolder":
         return cls(
             title=data["title"],
             add_date=data["add_date"],
@@ -79,7 +80,7 @@ class BookmarkFolder:
     def __getitem__(self, title: str) -> "Bookmark|BookmarkFolder":
         return self.get_child(title)
 
-    def iter_bookmarks(self) -> "Bookmark":
+    def iter_bookmarks(self) -> Iterator[Bookmark]:
         for x in self.contents:
             if isinstance(x, Bookmark):
                 yield x
@@ -102,7 +103,7 @@ class BookmarkFolder:
         return output
 
 
-def process_child(element: PageElement) -> Bookmark | BookmarkFolder:
+def process_child(element: PageElement) -> Bookmark | BookmarkFolder | None:
     if element.name == "h3":
 
         bkfolder: BookmarkFolder = BookmarkFolder(
@@ -155,16 +156,16 @@ def process_bookmark_file(data: str) -> BookmarkFolder:
 
     # the structure is now as follows:
     """<!DOCTYPE NETSCAPE-Bookmark-file-1>
-	<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
-	<TITLE>Bookmarks</TITLE>
-	<H1>Bookmarks</H1>
-	<DL>
-		<H3 add_date="1624139022" last_modified="1674165683" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks</H3>
-		<DL>
-			<DT><A HREF="https://calendar.google.com/calendar/r" add_date="1594058447">calendar</A>
-			<DT><A HREF="https://github.com/" add_date="1657553942">github</A>
-	..............		
-	"""
+    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+    <TITLE>Bookmarks</TITLE>
+    <H1>Bookmarks</H1>
+    <DL>
+        <H3 add_date="1624139022" last_modified="1674165683" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks</H3>
+        <DL>
+            <DT><A HREF="https://calendar.google.com/calendar/r" add_date="1594058447">calendar</A>
+            <DT><A HREF="https://github.com/" add_date="1657553942">github</A>
+    ..............		
+    """
 
     # find title
     title = soup.find("h1").string
@@ -198,7 +199,7 @@ def flatten_bookmarks(folder: BookmarkFolder) -> list[Bookmark]:
     bk: Bookmark
     for bk in folder.iter_bookmarks():
         tags_temp: list[str] = list()
-        bk_temp: Bookmark = bk
+        bk_temp: Bookmark | BookmarkFolder = bk
         # loop until root
         while bk_temp._parent is not None:
             tags_temp.append(bk_temp._parent.title)
@@ -251,13 +252,13 @@ def main(
         if tree:
             raise ValueError("cannot flatten and print tree at the same time")
 
-        bookmarks = flatten_bookmarks(bookmarks)
+        bookmarks = flatten_bookmarks(bookmarks)  # type: ignore
 
     if select is not None:
         # select by path
         path: list[str] = select.split("/")
         for p in path:
-            bookmarks = bookmarks.get_child(p)
+            bookmarks = bookmarks.get_child(p)  # type: ignore
 
     if tree:
         print(json.dumps(bookmarks.get_tree(), indent="\t"))
@@ -267,6 +268,6 @@ def main(
 
 
 if __name__ == "__main__":
-    import fire
+    import fire  # type: ignore[import]
 
     fire.Fire(main)
