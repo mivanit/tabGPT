@@ -15,12 +15,6 @@ _Use GPT to classify a bunch of your browser tabs!_
 
     ```pip install -r requirements.txt```
 
-
-## Testing & Static analysis
-
-## Run formatter
-```make format```
-
 ### bookmark_utils
 
 Parse bookmarks file to BookmarkFolder class and serialize to JSON. Print result to STDOUT.
@@ -59,3 +53,13 @@ Currently this file does not classify tabs. It generates the next tokens in a se
 
    ```poetry run python classify_tabs.py gen_file```
 
+## Testing & Static analysis
+
+## Run all checks
+```make check```
+
+## Run formatter
+```make format```
+
+### Run mypy
+```make mypy```

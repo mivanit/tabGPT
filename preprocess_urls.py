@@ -3,7 +3,7 @@ import requests
 import re
 import typing
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type: ignore[import]
 import yaml
 from tqdm import tqdm
 import dateparser
@@ -27,7 +27,7 @@ def bs_find_text(soup: BeautifulSoup, *args, **kwargs) -> str:
     """find text in a BeautifulSoup object. kwargs are passed to `bs_find_text(soup, )`"""
     temp = soup.find(*args, **kwargs)
     if temp is None:
-        return None
+        return ""
     else:
         return temp.get_text().strip()
 
@@ -87,9 +87,9 @@ def get_arxiv_meta(
 
 
 def get_url_meta(url: str) -> dict:
-    url: str = preprocess_url(url)
+    url = preprocess_url(url)
     response: requests.Response = requests.get(f"http://{url}")
-    soup: BeautifulSoup | None = BeautifulSoup(response.text, "html.parser")
+    soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
 
     title_obj = bs_find_text(soup, "title")
     title: str | None = None
@@ -117,7 +117,8 @@ def get_url_meta(url: str) -> dict:
 # def gpt_classify_meta(meta: dict) -> list[str]:
 # 	"""classify URL meta using GPT-3. returns a list of tags"""
 
-def process_urls(file: str, format: typing.Literal["json", "yaml", "yml"]) -> str:
+
+def process_urls(file: str, output_format: typing.Literal["json", "yaml", "yml"]):
     """process a file of URLs and print to stdout a yaml file with the meta data
     Parameters:
       file (str): a file with 1 URL on each line
@@ -133,12 +134,13 @@ def process_urls(file: str, format: typing.Literal["json", "yaml", "yml"]) -> st
         meta.append(get_url_meta(url))
 
     # enforce this key order: url, title, headings
-    if format == "json":
+    if output_format == "json":
         print(json.dumps(meta, indent="  "))
-    elif format in ["yaml", "yml"]:
+    elif output_format in ["yaml", "yml"]:
         print(yaml.dump(meta, sort_keys=False))
 
+
 if __name__ == "__main__":
-    import fire
+    import fire  # type: ignore[import]
 
     fire.Fire(process_urls)
