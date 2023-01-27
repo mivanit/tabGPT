@@ -2,20 +2,10 @@
 
 _Use GPT to classify a bunch of your browser tabs!_
 
-## Setup
 
-* Install [PyTorch](https://pytorch.org/get-started/locally/) to your global python
-* Create venv and allow it to access global packages
+# scripts
 
-    ```python -m venv venv --system-site-packages```
-* Activate venv
-
-    ```source venv/bin/activate```
-* Install dependencies
-
-    ```pip install -r requirements.txt```
-
-### bookmark_utils
+## bookmark_utils
 
 Parse bookmarks file to BookmarkFolder class and serialize to JSON. Print result to STDOUT.
 
@@ -25,7 +15,7 @@ Parse bookmarks file to BookmarkFolder class and serialize to JSON. Print result
 
     ```python bookmark_utils.py path/to/bookmarks.html```
 
-### preprocess_urls.py
+## preprocess_urls.py
 
 Process a file of URLs and print to stdout a file with the metadata. Input file should contain one URL per line.
 
@@ -35,31 +25,57 @@ Process a file of URLs and print to stdout a file with the metadata. Input file 
 
     ```python preprocess_urls.py path/to/tabs_file.txt --output_format=[json|yaml|yml]```
 
-### clasify_tabs
+## clasify_tabs
 
 Currently this file does not classify tabs. It generates the next tokens in a sequence.
 
-#### Input from command line
+- generate continuation from command line:
+    ```python classify_tabs.py gen "lorem ipsum"```
 
-1. Run classify_tabs
+- generate continuation from a file `prompt.txt`:
+    ```python classify_tabs.py gen_file ```
+   
 
-    ```python3 classify_tabs.py gen "lorem ipsum"```
 
-#### Input from file
+# Roadmap
 
-1. Write some sample text to a file `temp.txt` in the project directory
+- [ ] basic prompted prototype
+    - [x] basic extraction of page metadata given a URL
+    - [x] parsing of bookmark files
+    - [ ] small set of manually classified data
+    - [ ] generation of prompts from manual data + tag list
+    - [ ] extraction of tags from a generated response
+- [ ] finetuned model
+    - [ ] larger dataset -- augment via manual review of automated classification?
+    - [ ] finetune GPT-2
+- [ ] exporting of classified tabs -- input needed from users, below are simply a few ideas
+    - export to [Dendron](https://www.dendron.so/) vault
+    - export to Notion
+    - re-add bookmarks to browser
+- [ ] long-term
+    - [ ] better metadata extraction (keywords via `nltk_rake`, etc)
+    - [ ] compatibility with openAI API -- finetune GPT-3?
+    - [ ] browser extension (probably will use openAPI, might be a separate project)
 
-1. Run classify_tabs:
 
-   ```poetry run python classify_tabs.py gen_file```
+# Development
+
+## Setup
+
+* Install [PyTorch](https://pytorch.org/get-started/locally/) to your global python
+* Create venv and allow it to access global packages
+
+    ```python -m venv venv_path --system-site-packages```
+* Activate venv
+
+    ```source venv_path/bin/activate```
+* Install dependencies
+
+    ```pip install -r requirements.txt```
+
 
 ## Testing & Static analysis
 
-## Run all checks
-```make check```
-
-## Run formatter
-```make format```
-
-### Run mypy
-```make mypy```
+- formatter (black) via `make format`
+- mypy via `make mypy`
+- all of the above via `make check`

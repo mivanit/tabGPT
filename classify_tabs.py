@@ -61,14 +61,14 @@ def get_logits_and_tokens(text: str):
 def test_generation(
     EXAMPLE_PROMPT: str = """Horrible: negative\nGreat: positive\nBad:""",
     max_length: int = 5,
-    stop_token: str ="\n",
+    stop_token: str = "\n",
 ):
     example_gen: str = generate(
-        EXAMPLE_PROMPT, 
-        max_length = max_length,
-        stop_token = stop_token,
+        EXAMPLE_PROMPT,
+        max_length=max_length,
+        stop_token=stop_token,
     )
-    
+
     print(example_gen)
 
     logits, tokens = get_logits_and_tokens(example_gen)
@@ -81,11 +81,15 @@ def test_generation(
     )
 
 
-def test_generation_from_file(filename: str = "temp.txt"):
+def test_generation_from_file(
+        filename: str = "temp.txt", 
+        max_length: int = 10, 
+        stop_token: str = "\n",
+    ):
     with open(filename, "r") as f:
         prompt: str = f.read()
 
-    test_generation(prompt, stop_token="\n")
+    test_generation(prompt, max_length=max_length, stop_token=stop_token)
 
 
 if __name__ == "__main__":
