@@ -60,9 +60,15 @@ def get_logits_and_tokens(text: str):
 
 def test_generation(
     EXAMPLE_PROMPT: str = """Horrible: negative\nGreat: positive\nBad:""",
-    stop_token="\n",
+    max_length: int = 5,
+    stop_token: str ="\n",
 ):
-    example_gen: str = generate(EXAMPLE_PROMPT, stop_token=stop_token)
+    example_gen: str = generate(
+        EXAMPLE_PROMPT, 
+        max_length = max_length,
+        stop_token = stop_token,
+    )
+    
     print(example_gen)
 
     logits, tokens = get_logits_and_tokens(example_gen)
