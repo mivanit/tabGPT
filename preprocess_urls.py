@@ -1,12 +1,12 @@
 import json
-import requests
 import re
 import typing
 
-from bs4 import BeautifulSoup  # type: ignore[import]
-import yaml
-from tqdm import tqdm
 import dateparser
+import requests
+import yaml
+from bs4 import BeautifulSoup  # type: ignore[import]
+from tqdm import tqdm
 
 # OPENAI_KEY: str = open('OPENAI_KEY.txt').read().strip()
 

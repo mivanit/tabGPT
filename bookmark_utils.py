@@ -3,12 +3,12 @@
 I've checked, and firefox, edge, and vivaldi all use this format
 """
 
-import sys
-from dataclasses import dataclass, field, asdict
-import warnings
 import json
-
+import sys
+import warnings
+from dataclasses import asdict, dataclass, field
 from typing import Iterator, List
+
 from bs4 import BeautifulSoup, PageElement  # type: ignore[import]
 from muutils.json_serialize import json_serialize  # type: ignore[import]
 
