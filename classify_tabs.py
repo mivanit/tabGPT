@@ -82,10 +82,10 @@ def test_generation(
 
 
 def test_generation_from_file(
-        filename: str = "temp.txt", 
-        max_length: int = 10, 
-        stop_token: str = "\n",
-    ):
+    filename: str = "temp.txt",
+    max_length: int = 10,
+    stop_token: str = "\n",
+):
     with open(filename, "r") as f:
         prompt: str = f.read()
 
