@@ -58,7 +58,7 @@ class BookmarkFolder:
         )
 
     @classmethod
-    def load(cls, data: dict|list) -> "BookmarkFolder":
+    def load(cls, data: dict | list) -> "BookmarkFolder":
         output: "BookmarkFolder"
         if isinstance(data, list):
             output = cls(
@@ -118,7 +118,6 @@ class BookmarkFolder:
                 continue
             output[x.title] = x.get_tree()
         return output
-
 
     def set_parents(self) -> None:
         """sets the parent attribute of all children"""

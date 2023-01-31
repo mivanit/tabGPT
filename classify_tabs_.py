@@ -1,8 +1,9 @@
-from preprocess_urls import get_url_meta
-from generate_continuation import generate_continuation
+from pathlib import Path
+
 import yaml
 
-from pathlib import Path
+from generate_continuation import generate_continuation
+from preprocess_urls import get_url_meta
 
 
 def main():

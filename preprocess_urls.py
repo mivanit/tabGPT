@@ -1,7 +1,6 @@
 import json
-import sys
-import requests
 import re
+import sys
 import typing
 
 import dateparser
@@ -10,9 +9,10 @@ import yaml
 from bs4 import BeautifulSoup  # type: ignore[import]
 from tqdm import tqdm
 
+from bookmark_utils import Bookmark, BookmarkFolder
+
 # OPENAI_KEY: str = open('OPENAI_KEY.txt').read().strip()
 
-from bookmark_utils import BookmarkFolder, Bookmark
 
 PROMPT_FORMAT: str = """# classification of urls according to category. can include multiple tags, and nested tags. 
 # for example, `` or ``
@@ -96,7 +96,11 @@ def get_url_meta(url: str, do_except: bool = False) -> dict:
 
     try:
         response: requests.Response = requests.get(url_fmt)
-    except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL, ValueError) as e:
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.InvalidURL,
+        ValueError,
+    ) as e:
         print(f"with url:\n{url_fmt}\nerror: {e}", file=sys.stderr)
         if do_except:
             raise e
@@ -133,11 +137,11 @@ def get_url_meta(url: str, do_except: bool = False) -> dict:
 
 
 def process_urls(
-        fname: str, 
-        output_format: typing.Literal["json", "yaml", "yml"] = "yml",
-        input_format: typing.Literal["txt", "json", None] = None,
-        do_except: bool = False,
-    ):
+    fname: str,
+    output_format: typing.Literal["json", "yaml", "yml"] = "yml",
+    input_format: typing.Literal["txt", "json", None] = None,
+    do_except: bool = False,
+):
     """process a file of URLs and print to stdout a yaml file with the meta data
     Parameters:
       file (str): json or txt file
@@ -154,13 +158,12 @@ def process_urls(
         else:
             raise ValueError(f"can't infer format of file {fname}")
 
-
     with open(fname) as f:
         if input_format == "txt":
             urls = [line.strip() for line in f.readlines()]
         elif input_format == "json":
             bkmks: BookmarkFolder = BookmarkFolder.load(json.load(f))
-            urls = [ b.href for b in bkmks.iter_bookmarks() ]
+            urls = [b.href for b in bkmks.iter_bookmarks()]
         else:
             raise ValueError(f"Unknown input format: {input_format}")
 
