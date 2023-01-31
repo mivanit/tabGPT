@@ -1,7 +1,11 @@
+# TODO: this is for an old version and no longer works -- some jax dependency issues? need to fix
+
+import json
 import typing
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM  # type: ignore[import]
+from transformers import (AutoModelForCausalLM,  # type: ignore[import]
+                          AutoTokenizer)
 
 # pylint: disable=missing-class-docstring,missing-function-docstring,dangerous-default-value
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
