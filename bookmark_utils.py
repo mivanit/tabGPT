@@ -58,16 +58,33 @@ class BookmarkFolder:
         )
 
     @classmethod
-    def load(cls, data: dict) -> "BookmarkFolder":
-        return cls(
-            title=data["title"],
-            add_date=data["add_date"],
-            last_modified=data["last_modified"],
-            contents=[
-                Bookmark.load(x) if "href" in x else BookmarkFolder.load(x)
-                for x in data["contents"]
-            ],
-        )
+    def load(cls, data: dict|list) -> "BookmarkFolder":
+        output: "BookmarkFolder"
+        if isinstance(data, list):
+            output = cls(
+                title="_root",
+                add_date=None,
+                last_modified=None,
+                contents=[
+                    Bookmark.load(x) if "href" in x else BookmarkFolder.load(x)
+                    for x in data
+                ],
+            )
+        elif isinstance(data, dict):
+            output = cls(
+                title=data["title"],
+                add_date=data["add_date"],
+                last_modified=data["last_modified"],
+                contents=[
+                    Bookmark.load(x) if "href" in x else BookmarkFolder.load(x)
+                    for x in data["contents"]
+                ],
+            )
+        else:
+            raise TypeError(f"invalid type {type(data)}")
+
+        output.set_parents()
+        return output
 
     def get_child(self, title: str) -> "Bookmark|BookmarkFolder":
         """get a child from `contents` by title"""
@@ -101,6 +118,14 @@ class BookmarkFolder:
                 continue
             output[x.title] = x.get_tree()
         return output
+
+
+    def set_parents(self) -> None:
+        """sets the parent attribute of all children"""
+        for x in self.contents:
+            x._parent = self
+            if isinstance(x, BookmarkFolder):
+                x.set_parents()
 
 
 def process_child(element: PageElement) -> Bookmark | BookmarkFolder | None:
@@ -238,10 +263,6 @@ def main(
         ]
     ):
         js_temp = json.loads(data)
-        if isinstance(js_temp, list):
-            raise ValueError(
-                "json file must contain a single object, not a list. is it a flattened library?"
-            )
         bookmarks = BookmarkFolder.load(json.loads(data))
     else:
         raise ValueError(f"unknown file format for {fname}")
