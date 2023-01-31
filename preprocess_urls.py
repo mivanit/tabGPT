@@ -1,18 +1,20 @@
 import json
-import sys
-import requests
 import re
+import sys
 import typing
+from dataclasses import dataclass, field
 
 import dateparser
+import rake_nltk
 import requests
 import yaml
 from bs4 import BeautifulSoup  # type: ignore[import]
 from tqdm import tqdm
 
+from bookmark_utils import Bookmark, BookmarkFolder
+
 # OPENAI_KEY: str = open('OPENAI_KEY.txt').read().strip()
 
-from bookmark_utils import BookmarkFolder, Bookmark
 
 PROMPT_FORMAT: str = """# classification of urls according to category. can include multiple tags, and nested tags. 
 # for example, `` or ``
@@ -36,6 +38,32 @@ def bs_find_text(soup: BeautifulSoup, *args, **kwargs) -> str:
         return temp.get_text().strip()
 
 
+@dataclass(kw_only=True)
+class UrlPreprocessor:
+    """class for preprocessing URLs, such as twitter.com -> nitter.net"""
+
+    check: typing.Callable[[str], bool]
+    process: typing.Callable[[str], str]
+    name: str | None = None
+
+
+# TODO: precompiling regexes would be faster
+URL_PREPROCESSORS: list[UrlPreprocessor] = [
+    UrlPreprocessor(
+        check=lambda url: re.search(r"arxiv\.org/pdf/(\d+\.\d+)\.pdf", url) is not None,
+        process=lambda url: re.sub(
+            r"arxiv\.org/pdf/(\d+\.\d+)\.pdf", r"arxiv.org/abs/\1", url
+        ),
+        name="arxiv",
+    ),
+    UrlPreprocessor(
+        check=lambda url: re.search(r"twitter\.com/(.+)", url) is not None,
+        process=lambda url: re.sub(r"twitter\.com/(.+)", r"nitter.net/\1", url),
+        name="twitter",
+    ),
+]
+
+
 def preprocess_url(url: str) -> str:
     """preprocess URL according to certain rules
 
@@ -45,19 +73,25 @@ def preprocess_url(url: str) -> str:
     # remove http prefix (provides no info, wastes tokens)
     url = url.removeprefix("http://").removeprefix("https://")
 
-    # match group of digits and decimal point
-    m_arxiv = re.search(r"arxiv\.org/pdf/(\d+\.\d+)\.pdf", url)
-    # math any text after `twitter.com/`
-    m_twitter = re.search(r"twitter\.com/(.+)", url)
-    if m_arxiv:
-        return f"arxiv.org/abs/{m_arxiv.group(1)}"
-    elif m_twitter:
-        return f"nitter.net/{m_twitter.group(1)}"
-    else:
-        return url
+    for preprocessor in URL_PREPROCESSORS:
+        if preprocessor.check(url):
+            url = preprocessor.process(url)
+            break
+
+    return url
 
 
-def get_arxiv_meta(
+@dataclass(kw_only=True)
+class MetaExtractor:
+    """extract metadata from a url/soup, like getting citation info from arxiv.org"""
+
+    check: typing.Callable[[str, BeautifulSoup], bool]
+    extract: typing.Callable[[str, BeautifulSoup], dict]
+    name: str | None = None
+
+
+def get_meta_arxiv(
+    url: str,
     soup: BeautifulSoup,
     # filter_keys: typing.Callable[[str], bool] = lambda k : True,
     filter_keys: typing.Callable[[str], bool] = lambda k: k
@@ -90,19 +124,87 @@ def get_arxiv_meta(
     return {k: v for k, v in output.items() if filter_keys(k)}
 
 
+def get_meta_fallback(
+    url: str,
+    soup: BeautifulSoup,
+    kw_thresh: float = 1.0,
+    kw_max_count: int = 10,
+    kw_total_len_max: int = 500,
+) -> dict:
+    """fallback for getting metadata from a URL. returns a dict
+
+    dict contains:
+    - headings: list of h1 headings, if nonempty
+    - keywords: list of keywords from text
+    """
+    # extract headings
+    headings: list[str] = [
+        heading.get_text().strip() for heading in soup.find_all(["h1"])
+    ]
+
+    # get keywords from the main text
+    alltext: str = soup.get_text()
+    r: rake_nltk.Rake = rake_nltk.Rake()
+    r.extract_keywords_from_text(alltext)
+    keywords_scored: list[tuple[float, str]] = r.get_ranked_phrases_with_scores()
+
+    # filter keywords to shorten length
+    keywords: list[str] = [
+        keyword for score, keyword in keywords_scored if score >= kw_thresh
+    ][:kw_max_count]
+
+    while sum(len(k) for k in keywords) > kw_total_len_max:
+        keywords.pop()
+
+    # assemble output and return
+    output: dict = dict(
+        headings=headings,
+        keywords=keywords,
+    )
+
+    if len(headings) == 0:
+        del output["headings"]
+
+    return output
+
+
+META_EXTRACTORS: list[MetaExtractor] = [
+    MetaExtractor(
+        check=lambda url, soup: re.search(r"arxiv\.org/abs/(\d+\.\d+)", url)
+        is not None,
+        extract=get_meta_arxiv,
+        name="arxiv",
+    ),
+    MetaExtractor(
+        check=lambda url, soup: True,
+        extract=get_meta_fallback,
+        name="fallback",
+    ),
+]
+
+
 def get_url_meta(url: str, do_except: bool = False) -> dict:
+    """given a url, processes it and then gets metadata"""
+
+    # preprocess
     url = preprocess_url(url)
     url_fmt: str = f"http://{url}"
 
+    # get html
     try:
         response: requests.Response = requests.get(url_fmt)
-    except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL, ValueError) as e:
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.InvalidURL,
+        ValueError,
+    ) as e:
         print(f"with url:\n{url_fmt}\nerror: {e}", file=sys.stderr)
         if do_except:
             raise e
 
         return dict(url=url, error=True)
 
+    # parse basics
     soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
 
     title_obj = bs_find_text(soup, "title")
@@ -113,31 +215,23 @@ def get_url_meta(url: str, do_except: bool = False) -> dict:
     output: dict = dict(
         url=url,
         title=title,
-        headings=[heading.get_text().strip() for heading in soup.find_all(["h1"])],
     )
 
-    if "arxiv.org/abs/" in url:
-        # remove the "headings" key
-        del output["headings"]
-
-        output.update(get_arxiv_meta(soup))
-
-    elif len(output["headings"]) == 0:
-        del output["headings"]
+    # run individual extractors
+    for extractor in META_EXTRACTORS:
+        if extractor.check(url, soup):
+            output.update(extractor.extract(url, soup))
+            break
 
     return output
 
 
-# def gpt_classify_meta(meta: dict) -> list[str]:
-# 	"""classify URL meta using GPT-3. returns a list of tags"""
-
-
 def process_urls(
-        fname: str, 
-        output_format: typing.Literal["json", "yaml", "yml"] = "yml",
-        input_format: typing.Literal["txt", "json", None] = None,
-        do_except: bool = False,
-    ):
+    fname: str,
+    output_format: typing.Literal["json", "yaml", "yml"] = "yml",
+    input_format: typing.Literal["txt", "json", None] = None,
+    do_except: bool = False,
+):
     """process a file of URLs and print to stdout a yaml file with the meta data
     Parameters:
       file (str): json or txt file
@@ -154,13 +248,12 @@ def process_urls(
         else:
             raise ValueError(f"can't infer format of file {fname}")
 
-
     with open(fname) as f:
         if input_format == "txt":
             urls = [line.strip() for line in f.readlines()]
         elif input_format == "json":
             bkmks: BookmarkFolder = BookmarkFolder.load(json.load(f))
-            urls = [ b.href for b in bkmks.iter_bookmarks() ]
+            urls = [b.href for b in bkmks.iter_bookmarks()]
         else:
             raise ValueError(f"Unknown input format: {input_format}")
 
