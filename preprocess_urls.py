@@ -1,14 +1,18 @@
 import json
+import sys
 import requests
 import re
 import typing
 
-from bs4 import BeautifulSoup  # type: ignore[import]
-import yaml
-from tqdm import tqdm
 import dateparser
+import requests
+import yaml
+from bs4 import BeautifulSoup  # type: ignore[import]
+from tqdm import tqdm
 
 # OPENAI_KEY: str = open('OPENAI_KEY.txt').read().strip()
+
+from bookmark_utils import BookmarkFolder, Bookmark
 
 PROMPT_FORMAT: str = """# classification of urls according to category. can include multiple tags, and nested tags. 
 # for example, `` or ``
@@ -86,9 +90,19 @@ def get_arxiv_meta(
     return {k: v for k, v in output.items() if filter_keys(k)}
 
 
-def get_url_meta(url: str) -> dict:
+def get_url_meta(url: str, do_except: bool = False) -> dict:
     url = preprocess_url(url)
-    response: requests.Response = requests.get(f"http://{url}")
+    url_fmt: str = f"http://{url}"
+
+    try:
+        response: requests.Response = requests.get(url_fmt)
+    except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL, ValueError) as e:
+        print(f"with url:\n{url_fmt}\nerror: {e}", file=sys.stderr)
+        if do_except:
+            raise e
+
+        return dict(url=url, error=True)
+
     soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
 
     title_obj = bs_find_text(soup, "title")
@@ -118,20 +132,43 @@ def get_url_meta(url: str) -> dict:
 # 	"""classify URL meta using GPT-3. returns a list of tags"""
 
 
-def process_urls(file: str, output_format: typing.Literal["json", "yaml", "yml"]):
+def process_urls(
+        fname: str, 
+        output_format: typing.Literal["json", "yaml", "yml"] = "yml",
+        input_format: typing.Literal["txt", "json", None] = None,
+        do_except: bool = False,
+    ):
     """process a file of URLs and print to stdout a yaml file with the meta data
     Parameters:
-      file (str): a file with 1 URL on each line
+      file (str): json or txt file
       output_format: format to use when writing the output
     """
-    with open(file) as f:
-        urls: list[str] = [line.strip() for line in f.readlines()]
+
+    urls: list[str]
+    if input_format is None:
+        # guess input format
+        if fname.endswith(".json"):
+            input_format = "json"
+        elif fname.endswith(".txt"):
+            input_format = "txt"
+        else:
+            raise ValueError(f"can't infer format of file {fname}")
+
+
+    with open(fname) as f:
+        if input_format == "txt":
+            urls = [line.strip() for line in f.readlines()]
+        elif input_format == "json":
+            bkmks: BookmarkFolder = BookmarkFolder.load(json.load(f))
+            urls = [ b.href for b in bkmks.iter_bookmarks() ]
+        else:
+            raise ValueError(f"Unknown input format: {input_format}")
 
     # get meta data and print as yaml
     meta: list[dict] = list()
     # each item is a url
     for url in tqdm(urls, unit="url"):
-        meta.append(get_url_meta(url))
+        meta.append(get_url_meta(url, do_except=do_except))
 
     # enforce this key order: url, title, headings
     if output_format == "json":

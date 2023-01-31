@@ -76,6 +76,6 @@ Currently this file does not classify tabs. It generates the next tokens in a se
 
 ## Testing & Static analysis
 
-- formatter (black) via `make format`
+- formatter (black and isort) via `make format`
 - mypy via `make mypy`
 - all of the above via `make check`
