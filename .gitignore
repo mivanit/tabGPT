@@ -1,4 +1,5 @@
 data/**
+test_data/transient/**
 venv/
 __pycache__/
 prompt.txt

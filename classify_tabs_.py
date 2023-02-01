@@ -1,15 +1,16 @@
-from preprocess_urls import get_url_meta
-from generate_continuation import generate_continuation
+from pathlib import Path
+
 import yaml
 
-from pathlib import Path
+from generate_continuation import generate_continuation
+from preprocess_urls import get_url_meta
 
 
 def main(
-        base_prompt_file: Path|str = Path("data/prompt.yaml"),
-        url: str = "https://arxiv.org/pdf/2212.07677.pdf",
-        max_length: int = 30,
-    ):
+    base_prompt_file: Path | str = Path("data/prompt.yaml"),
+    url: str = "https://arxiv.org/pdf/2212.07677.pdf",
+    max_length: int = 30,
+):
 
     if not isinstance(base_prompt_file, Path):
         base_prompt_file = Path(base_prompt_file)
@@ -21,10 +22,12 @@ def main(
 
     prompt: str = generate_prompt(url, base_prompt_file)
     # print(prompt)
-    continuation: str = generate_continuation(prompt, max_length=max_length, stop_token="]")
+    continuation: str = generate_continuation(
+        prompt, max_length=max_length, stop_token="]"
+    )
 
     tags: list[str] = extract_tags(continuation)
-    
+
     return tags
 
 
@@ -45,4 +48,5 @@ def extract_tags(continuation: str) -> list[str]:
 
 if __name__ == "__main__":
     import fire
+
     fire.Fire(main)

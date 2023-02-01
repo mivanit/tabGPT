@@ -11,7 +11,7 @@ import yaml
 from bs4 import BeautifulSoup  # type: ignore[import]
 from tqdm import tqdm
 
-from bookmark_utils import Bookmark, BookmarkFolder
+from bookmark_utils import Bookmark, BookmarkFolder, load_urls
 
 # OPENAI_KEY: str = open('OPENAI_KEY.txt').read().strip()
 
@@ -229,7 +229,7 @@ def get_url_meta(url: str, do_except: bool = False) -> dict:
 def process_urls(
     fname: str,
     output_format: typing.Literal["json", "yaml", "yml"] = "yml",
-    input_format: typing.Literal["txt", "json", None] = None,
+    input_format: typing.Literal["txt", "json", "html", None] = None,
     do_except: bool = False,
 ):
     """process a file of URLs and print to stdout a yaml file with the meta data
@@ -238,24 +238,7 @@ def process_urls(
       output_format: format to use when writing the output
     """
 
-    urls: list[str]
-    if input_format is None:
-        # guess input format
-        if fname.endswith(".json"):
-            input_format = "json"
-        elif fname.endswith(".txt"):
-            input_format = "txt"
-        else:
-            raise ValueError(f"can't infer format of file {fname}")
-
-    with open(fname) as f:
-        if input_format == "txt":
-            urls = [line.strip() for line in f.readlines()]
-        elif input_format == "json":
-            bkmks: BookmarkFolder = BookmarkFolder.load(json.load(f))
-            urls = [b.href for b in bkmks.iter_bookmarks()]
-        else:
-            raise ValueError(f"Unknown input format: {input_format}")
+    urls: list[str] = load_urls(fname, input_format=input_format)
 
     # get meta data and print as yaml
     meta: list[dict] = list()

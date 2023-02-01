@@ -8,12 +8,14 @@ import sys
 import warnings
 from dataclasses import asdict, dataclass, field
 from typing import Iterator, List
+import typing
 
 from bs4 import BeautifulSoup, PageElement  # type: ignore[import]
 from muutils.json_serialize import json_serialize  # type: ignore[import]
 
-# pylint: disable=missing-class-docstring,pointless-string-statement
+# pylint: disable=missing-class-docstring,pointless-string-statement,protected-access
 
+_VERBOSE_WARN: bool = False
 
 @dataclass(kw_only=True)
 class Bookmark:
@@ -148,6 +150,9 @@ def process_child(element: PageElement) -> Bookmark | BookmarkFolder | None:
             if p is not None:
                 p._parent = bkfolder
                 bkfolder.contents.append(p)
+            else:
+                if _VERBOSE_WARN:
+                    warnings.warn(f"skipping {child}")
 
         return bkfolder
 
@@ -161,9 +166,11 @@ def process_child(element: PageElement) -> Bookmark | BookmarkFolder | None:
             add_date=element["add_date"],
         )
     else:
-        warnings.warn(f"unexpected tag {element.name}")
-        # raise ValueError(f"unexpected tag {element.name}")
-        return None
+        if _VERBOSE_WARN:
+            # print the name and raw html of the element
+            warnings.warn(f"unexpected tag {element.name}\n{element[:1000]}")
+            # raise ValueError(f"unexpected tag {element.name}")
+            return None
 
 
 def process_bookmark_file(data: str) -> BookmarkFolder:
@@ -236,6 +243,67 @@ def flatten_bookmarks(folder: BookmarkFolder) -> list[Bookmark]:
     return output
 
 
+def load_bookmarks(
+        fname: str,
+        input_format: typing.Literal["txt", "json", "html", None] = None,
+    ) -> BookmarkFolder:
+    """loads a list of urls from a file -- plain txt, json, or html bookmarks"""
+    
+    bkmks: BookmarkFolder
+    with open(fname) as f:
+        data: str = f.read()
+
+        # guess input format
+        if input_format is None:
+            if fname.endswith(".json"):
+                input_format = "json"
+            elif fname.endswith(".txt"):
+                input_format = "txt"
+            elif any([
+                    fname.endswith(".html"),
+                    fname.endswith(".htm"),
+                    data.startswith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"),
+                ]):
+                input_format = "html"
+            else:
+                raise ValueError(f"can't infer format of file {fname}")
+
+        # load data
+        if input_format == "txt":
+            # if plain file, store each in a bookmark
+            urls = [line.strip() for line in f.readlines()]
+            bkmks = BookmarkFolder(
+                title="bookmarks",
+                add_date=None,
+                last_modified=None,
+                contents=[
+                    Bookmark(title=url, href=url, add_date=None) 
+                    for url in urls
+                ],
+            )
+        elif input_format == "json":
+            bkmks = BookmarkFolder.load(json.loads(data))
+        elif input_format == "html":
+            bkmks = process_bookmark_file(data)
+        else:
+            raise ValueError(f"Unknown input format: {input_format}")
+
+    return bkmks
+
+
+def load_urls(
+    fname: str, 
+    input_format: typing.Literal["txt", "json", "html", None] = None,
+) -> list[str]:
+
+    bkmks: BookmarkFolder = load_bookmarks(fname, input_format=input_format)
+    urls: list[str] = list()
+    for bk in bkmks.iter_bookmarks():
+        urls.append(bk.href)
+
+    return urls
+
+
 def main(
     fname: str,
     flatten: bool = False,
@@ -243,29 +311,7 @@ def main(
     select: str | None = None,
 ):
     # read file
-    with open(fname, "r", encoding="utf-8") as f:
-        data = f.read()
-
-    # load as html or json
-    bookmarks: BookmarkFolder
-    if any(
-        [
-            fname.endswith(".html"),
-            fname.endswith(".htm"),
-            data.startswith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"),
-        ]
-    ):
-        bookmarks = process_bookmark_file(data)
-    elif any(
-        [
-            fname.endswith(".json"),
-            data.startswith("{"),
-        ]
-    ):
-        js_temp = json.loads(data)
-        bookmarks = BookmarkFolder.load(json.loads(data))
-    else:
-        raise ValueError(f"unknown file format for {fname}")
+    bookmarks: BookmarkFolder = load_bookmarks(fname)
 
     print(f"{bookmarks.count_bookmarks()} bookmarks found", file=sys.stderr)
 
