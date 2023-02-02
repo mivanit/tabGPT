@@ -9,10 +9,21 @@ from bookmark_utils import Bookmark, BookmarkFolder, load_bookmarks, load_urls
 from generate_continuation import generate_continuation
 from preprocess_urls import get_url_meta
 
+def extract_tags(continuation: str) -> list[str]:
+    return continuation.split(", ")
+
+
+def generate_prompt(url: str, base_prompt: str):
+    # have to wrap in a list to make sure it's the same format as the base_prompt
+    # TODO tidy this up
+    metadata: list[dict] = [get_url_meta(url)]
+    url_prompt: str = yaml.dump(metadata, sort_keys=False)
+    return base_prompt.strip() + "\n" + url_prompt + "  tags: ["
+
 
 def classify_single(
-    base_prompt_file: Path | str = Path("data/prompt.yaml"),
     url: str = "https://arxiv.org/pdf/2212.07677.pdf",
+    base_prompt_file: Path | str = Path("test_data/prompt.yml"),
     max_length: int = 30,
 ) -> list[str]:
 
@@ -97,18 +108,6 @@ def classify_from_file(
         print(json.dumps(output, indent=2))
     elif output_format in ["yaml", "yml"]:
         print(yaml.dump(output, sort_keys=False))
-
-
-def generate_prompt(url: str, base_prompt: str):
-    # have to wrap in a list to make sure it's the same format as the base_prompt
-    # TODO tidy this up
-    metadata: list[dict] = [get_url_meta(url)]
-    url_prompt: str = yaml.dump(metadata, sort_keys=False)
-    return base_prompt.strip() + "\n" + url_prompt + "  tags: ["
-
-
-def extract_tags(continuation: str) -> list[str]:
-    return continuation.split(", ")
 
 
 if __name__ == "__main__":

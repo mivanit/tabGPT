@@ -11,7 +11,7 @@ import yaml
 from bs4 import BeautifulSoup  # type: ignore[import]
 from tqdm import tqdm
 
-from bookmark_utils import Bookmark, BookmarkFolder, load_urls
+from bookmark_utils import Bookmark, BookmarkFolder, load_bookmarks, load_urls
 
 # OPENAI_KEY: str = open('OPENAI_KEY.txt').read().strip()
 
@@ -238,13 +238,27 @@ def process_urls(
       output_format: format to use when writing the output
     """
 
-    urls: list[str] = load_urls(fname, input_format=input_format)
+    # get bookmarks and set their tags, if applicable
+    bkmks: BookmarkFolder = load_bookmarks(fname, input_format=input_format)
+    bkmks = bkmks.traverse_down_until_multiple_children()
+    bkmks.set_tags()
+
 
     # get meta data and print as yaml
     meta: list[dict] = list()
     # each item is a url
-    for url in tqdm(urls, unit="url"):
-        meta.append(get_url_meta(url, do_except=do_except))
+    for bk in tqdm(
+            bkmks.iter_bookmarks(), 
+            total=bkmks.count_bookmarks(),
+            unit="url", 
+            desc="processing urls", 
+        ):
+        temp: dict = get_url_meta(bk.href, do_except=do_except)
+
+        # we cut the first tag since the first one is always something common to all the bookmarks in the folder, and thus useless
+        if len(bk.tags) > 1:
+            temp["tags"] = bk.tags[1:]
+        meta.append(temp)
 
     # enforce this key order: url, title, headings
     if output_format == "json":

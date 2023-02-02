@@ -122,13 +122,43 @@ class BookmarkFolder:
             output[x.title] = x.get_tree()
         return output
 
+
+    def traverse_down_until_multiple_children(self) -> "BookmarkFolder":
+        """go down the tree until there are multiple children
+        
+        helps for getting rid of useless tags/folders like "bookmarks bar"
+        """
+        if len(self.contents) == 1:
+            if isinstance(self.contents[0], BookmarkFolder):
+                return self.contents[0].traverse_down_until_multiple_children()
+            else:
+                return self
+        else:
+            return self
+
+
     def set_parents(self) -> None:
         """sets the parent attribute of all children"""
         for x in self.contents:
             x._parent = self
             if isinstance(x, BookmarkFolder):
                 x.set_parents()
+    
 
+    def set_tags(self, path: tuple[str,...]|None = None) -> None:
+        """sets the tags attribute of all bookmarks"""
+        if path is None:
+            path = (str(self.title), )
+        else:
+            path = path + (str(self.title), )
+        for x in self.contents:
+            if isinstance(x, BookmarkFolder):
+                x._parent = self
+                x.set_tags(path)
+            elif isinstance(x, Bookmark):
+                x.tags = list(path)
+            else:
+                raise TypeError(f"invalid type {type(x)}")
 
 def process_child(element: PageElement) -> Bookmark | BookmarkFolder | None:
     if element.name == "h3":
