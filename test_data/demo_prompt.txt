@@ -1,0 +1,26 @@
+- url: github.com/mivanit/tabGPT
+  title: 'GitHub - mivanit/tabGPT: use GPT to classify a bunch of your open tabs!'
+  headings:
+  - mivanit/tabGPT
+  - Name already in use
+  - tabGPT
+  - scripts
+  - Roadmap
+  - Development
+  tags: [tool]
+- url: arxiv.org/abs/2211.00593
+  title: 'Interpretability in the Wild: a Circuit for Indirect Object Identification
+    in GPT-2 small'
+  subjects:
+  - Machine Learning (cs.LG)
+  - Artificial Intelligence (cs.AI)
+  - Computation and Language (cs.CL)
+  tags: [research]
+- url: www.lesswrong.com/posts/PDLfpRwSynu73mxGw/basic-facts-about-language-model-internals-1
+  title: 403 Forbidden
+  headings:
+  - 403 Forbidden
+  tags: [research]
+- url: neurips.cc/Conferences/2022/Dates
+  title: NeurIPS 2022
+  tags: [conference]

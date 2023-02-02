@@ -1,0 +1,100 @@
+- url: www.bing.com/spotlight?q=view+of+ornans+gustave+courbet&spotlightId=CourbetViewOfOrnans&FORM=EMSDS0
+  title: view of ornans gustave courbet - Search
+  headings:
+  - ''
+  keywords:
+  - "often courted controversy \u2014 due"
+  - "bingview fullscreenexit fullscreen \xA9"
+  - "art \xA9 2023 microsoftprivacy"
+  - french painter gustave courbet
+  - french painter gustave courbet
+  - "favorite subjec \u2026 one"
+  - vincent van gogh
+  - took center stage
+  - sanford robinson giffordpainting
+  - read moresee lessexplore
+- url: www.google.com/
+  title: Google
+  keywords:
+  - googlesearch images maps play youtube news gmail drive
+  - "advanced searchadvertisingbusiness solutionsabout google \xA9 2023"
+  - "\xBB web history"
+  - terms
+  - sign
+  - settings
+  - privacy
+- url: news.ycombinator.com/
+  title: Hacker News
+  keywords:
+  - following security updates require ubuntu pro
+  - hacker news hacker news new
+  - "com \u2013 structured groundhog data"
+  - quite ok audio format
+  - physicists observe rare resonance
+  - handling section 174 changes
+  - tomte 3 hours ago
+  - silverlight 3 hours ago
+  - prashantsengar 3 hours ago
+  - petiver 3 hours ago
+  tags:
+  - social
+- url: www.reddit.com/
+  title: Reddit - Dive into anything
+  keywords:
+  - joyjamie lee curtisnatalie portmanhenry cavillmillie bobby browntom hiddlestonkeanu
+    reevesmore topicsanimals
+  - join reddittrending todaypopular postshothotnewtoprisinghoteverywhereeverywhereunited
+    statesargentinaaustraliabulgariacanadachilecolombiacroatiaczech republicfinlandfrancegermanygreecehungaryicelandindiairelanditalyjapanmalaysiamexiconew
+    zealandphilippinespolandportugalpuerto ricoromaniaserbiasingaporespainswedentaiwanthailandturkeyunited
+    kingdomnewtoprisingcardcardclassiccompact59
+  tags:
+  - social
+- url: stanford-cs324.github.io/winter2022/
+  title: Home | CS324
+  headings:
+  - CS324 - Large Language Models
+  keywords:
+  - cs324 link search menu expand document cs324 homecalendarlecturesintroductioncapabilitiesharms
+    iharms iidatasecuritylegalitymodelingtrainingparallelismscaling lawsselective
+    architecturesadaptationenvironmental impactpaper reviewspaper discussionsprojects
+  - sang michael xiecourse assistantoffice hours
+  - appointment rishi bommasanicourse assistantoffice hours
+  - university policies ); zoom information
+  - friendly web interfaces like overleaf
+  - teaching team percy lianginstructoroffice hours
+  tags:
+  - machine-learning
+- url: transformer-circuits.pub/2023/toy-double-descent/index.html
+  title: Superposition, Memorization, and Double Descent
+  headings:
+  - Superposition, Memorization, and Double Descent
+  keywords:
+  - "carter\xE2 \x88\x97, tristan hume\xE2 \x88\x97, nelson elhage\xE2 \x88\x97, robert\
+    \ lasenby"
+  - frac {|| h_i ||^ 2 }{\ sum_j (\ hat
+  - "unusually high data dimensionality \xE2 \x80\x93 almost 100x higher"
+  - "christopher olah\xE2 \x80\xA1 affiliation anthropic published january 5"
+  - relu output model h ~=~ wx x '~=~\ text
+  - training examples easier one could instead untie model weights w
+  - feature space using synthetic input vectors x
+  - extremely sparse features makes gradients much noisier
+  - high sparsity would require annoyingly large vectors
+  tags:
+  - machine-learning
+- url: nitter.net/abacaj/status/1618033397250789376
+  title: Error | nitter
+  keywords:
+  - nitter nitter tweet
+  - found
+  - error
+  tags:
+  - machine-learning
+- url: arxiv.org/abs/2212.07677
+  title: Transformers learn in-context by gradient descent
+  subjects:
+  - Machine Learning (cs.LG)
+  - Artificial Intelligence (cs.AI)
+  - Computation and Language (cs.CL)
+  tags:
+  - machine-learning
+

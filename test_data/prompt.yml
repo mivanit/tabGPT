@@ -1,0 +1,46 @@
+- url: stanford-cs324.github.io/winter2022/
+  title: Home | CS324
+  headings:
+  - CS324 - Large Language Models
+  keywords:
+  - cs324 link search menu expand document cs324 homecalendarlecturesintroductioncapabilitiesharms
+    iharms iidatasecuritylegalitymodelingtrainingparallelismscaling lawsselective
+    architecturesadaptationenvironmental impactpaper reviewspaper discussionsprojects
+  - sang michael xiecourse assistantoffice hours
+  - appointment rishi bommasanicourse assistantoffice hours
+  - university policies ); zoom information
+  - friendly web interfaces like overleaf
+  - teaching team percy lianginstructoroffice hours
+  tags:
+  - machine-learning
+  - transformers
+  - LLMs
+- url: transformer-circuits.pub/2023/toy-double-descent/index.html
+  title: Superposition, Memorization, and Double Descent
+  headings:
+  - Superposition, Memorization, and Double Descent
+  keywords:
+  - "carter\xE2 \x88\x97, tristan hume\xE2 \x88\x97, nelson elhage\xE2 \x88\x97, robert\
+    \ lasenby"
+  - frac {|| h_i ||^ 2 }{\ sum_j (\ hat
+  - "unusually high data dimensionality \xE2 \x80\x93 almost 100x higher"
+  - "christopher olah\xE2 \x80\xA1 affiliation anthropic published january 5"
+  - relu output model h ~=~ wx x '~=~\ text
+  - training examples easier one could instead untie model weights w
+  - feature space using synthetic input vectors x
+  - extremely sparse features makes gradients much noisier
+  - high sparsity would require annoyingly large vectors
+  tags:
+  - machine-learning
+  - interpretability
+- url: arxiv.org/abs/2212.07677
+  title: Transformers learn in-context by gradient descent
+  subjects:
+  - Machine Learning (cs.LG)
+  - Artificial Intelligence (cs.AI)
+  - Computation and Language (cs.CL)
+  tags:
+  - machine-learning
+  - transformers
+  - interpretability
+
