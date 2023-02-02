@@ -1,13 +1,14 @@
 import json
-from pathlib import Path
 import typing
+from pathlib import Path
 
 import yaml
 from muutils.json_serialize import json_serialize  # type: ignore[import]
 
+from bookmark_utils import Bookmark, BookmarkFolder, load_bookmarks, load_urls
 from generate_continuation import generate_continuation
 from preprocess_urls import get_url_meta
-from bookmark_utils import Bookmark, BookmarkFolder, load_bookmarks, load_urls
+
 
 def classify_single(
     base_prompt_file: Path | str = Path("data/prompt.yaml"),
@@ -33,6 +34,7 @@ def classify_single(
 
     return tags
 
+
 def classify_from_file(
     urls_file: str,
     base_prompt_file: Path = Path("data/prompt.yaml"),
@@ -53,18 +55,17 @@ def classify_from_file(
         )
 
     base_prompt: str = base_prompt_file.read_text(encoding="utf-8")
-    
+
     # load data to classify
     bkmks: BookmarkFolder = load_bookmarks(
         fname=urls_file,
         input_format=input_format,
     )
 
-
     # classify
     classified: list[Bookmark] = list()
     for bk in bkmks.iter_bookmarks():
-        
+
         # get the tags
         prompt: str = generate_prompt(url=bk.href, base_prompt=base_prompt)
         continuation: str = generate_continuation(
@@ -82,11 +83,13 @@ def classify_from_file(
     bkd: dict
     if sparse_output:
         for bkd in output_temp:
-            output.append(dict(
-                title=bkd["title"],
-                href=bkd["href"],
-                tags=bkd["tags"],
-            ))
+            output.append(
+                dict(
+                    title=bkd["title"],
+                    href=bkd["href"],
+                    tags=bkd["tags"],
+                )
+            )
     else:
         output = output_temp
 
@@ -109,9 +112,11 @@ def extract_tags(continuation: str) -> list[str]:
 
 
 if __name__ == "__main__":
-    import fire # type: ignore[import]
+    import fire  # type: ignore[import]
 
-    fire.Fire(dict(
-        single=classify_single,
-        file=classify_from_file,
-    ))
+    fire.Fire(
+        dict(
+            single=classify_single,
+            file=classify_from_file,
+        )
+    )

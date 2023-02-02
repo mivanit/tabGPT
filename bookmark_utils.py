@@ -5,10 +5,10 @@ I've checked, and firefox, edge, and vivaldi all use this format
 
 import json
 import sys
+import typing
 import warnings
 from dataclasses import asdict, dataclass, field
 from typing import Iterator, List
-import typing
 
 from bs4 import BeautifulSoup, PageElement  # type: ignore[import]
 from muutils.json_serialize import json_serialize  # type: ignore[import]
@@ -17,11 +17,12 @@ from muutils.json_serialize import json_serialize  # type: ignore[import]
 
 _VERBOSE_WARN: bool = False
 
+
 @dataclass(kw_only=True)
 class Bookmark:
     title: str
     href: str
-    add_date: int|None = None
+    add_date: int | None = None
     _parent: "BookmarkFolder|None" = field(default=None, repr=False, compare=False)
     tags: List[str] | None = None
 
@@ -60,7 +61,7 @@ class BookmarkFolder:
         )
 
     @classmethod
-    def load(cls, data: dict|list) -> "BookmarkFolder":
+    def load(cls, data: dict | list) -> "BookmarkFolder":
         output: "BookmarkFolder"
         if isinstance(data, list):
             output = cls(
@@ -120,7 +121,6 @@ class BookmarkFolder:
                 continue
             output[x.title] = x.get_tree()
         return output
-
 
     def set_parents(self) -> None:
         """sets the parent attribute of all children"""
@@ -246,11 +246,11 @@ def flatten_bookmarks(folder: BookmarkFolder) -> list[Bookmark]:
 
 
 def load_bookmarks(
-        fname: str,
-        input_format: typing.Literal["txt", "json", "html", None] = None,
-    ) -> BookmarkFolder:
+    fname: str,
+    input_format: typing.Literal["txt", "json", "html", None] = None,
+) -> BookmarkFolder:
     """loads a list of urls from a file -- plain txt, json, or html bookmarks"""
-    
+
     bkmks: BookmarkFolder
     with open(fname) as f:
         data: str = f.read()
@@ -261,11 +261,13 @@ def load_bookmarks(
                 input_format = "json"
             elif fname.endswith(".txt"):
                 input_format = "txt"
-            elif any([
+            elif any(
+                [
                     fname.endswith(".html"),
                     fname.endswith(".htm"),
                     data.startswith("<!DOCTYPE NETSCAPE-Bookmark-file-1>"),
-                ]):
+                ]
+            ):
                 input_format = "html"
             else:
                 raise ValueError(f"can't infer format of file {fname}")
@@ -278,10 +280,7 @@ def load_bookmarks(
                 title="bookmarks",
                 add_date=None,
                 last_modified=None,
-                contents=[
-                    Bookmark(title=url, href=url, add_date=None) 
-                    for url in urls
-                ],
+                contents=[Bookmark(title=url, href=url, add_date=None) for url in urls],
             )
         elif input_format == "json":
             bkmks = BookmarkFolder.load(json.loads(data))
@@ -294,7 +293,7 @@ def load_bookmarks(
 
 
 def load_urls(
-    fname: str, 
+    fname: str,
     input_format: typing.Literal["txt", "json", "html", None] = None,
 ) -> list[str]:
 
