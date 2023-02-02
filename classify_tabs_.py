@@ -18,7 +18,7 @@ def classify_single(
     if not isinstance(base_prompt_file, Path):
         base_prompt_file = Path(base_prompt_file)
 
-    if not base_prompt_file.exists:
+    if not base_prompt_file.exists():
         raise ValueError(
             f"Base prompt file {base_prompt_file.absolute} does not exist."
         )
@@ -35,7 +35,7 @@ def classify_single(
 
 def classify_from_file(
     urls_file: str,
-    base_prompt_file: str = Path("data/prompt.yaml"),
+    base_prompt_file: Path = Path("data/prompt.yaml"),
     max_length: int = 30,
     output_format: typing.Literal["json", "yaml", "yml"] = "yml",
     input_format: typing.Literal["txt", "json", "html", None] = None,
@@ -47,7 +47,7 @@ def classify_from_file(
     if not isinstance(base_prompt_file, Path):
         base_prompt_file = Path(base_prompt_file)
 
-    if not base_prompt_file.exists:
+    if not base_prompt_file.exists():
         raise ValueError(
             f"Base prompt file {base_prompt_file.absolute} does not exist."
         )
@@ -79,12 +79,13 @@ def classify_from_file(
     # output
     output_temp: list[dict] = json_serialize(classified)
     output: list[dict] = list()
+    bkd: dict
     if sparse_output:
-        for bk in output_temp:
+        for bkd in output_temp:
             output.append(dict(
-                title=bk["title"],
-                href=bk["href"],
-                tags=bk["tags"],
+                title=bkd["title"],
+                href=bkd["href"],
+                tags=bkd["tags"],
             ))
     else:
         output = output_temp
@@ -108,7 +109,7 @@ def extract_tags(continuation: str) -> list[str]:
 
 
 if __name__ == "__main__":
-    import fire
+    import fire # type: ignore[import]
 
     fire.Fire(dict(
         single=classify_single,

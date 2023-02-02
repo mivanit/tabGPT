@@ -21,7 +21,7 @@ _VERBOSE_WARN: bool = False
 class Bookmark:
     title: str
     href: str
-    add_date: int
+    add_date: int|None = None
     _parent: "BookmarkFolder|None" = field(default=None, repr=False, compare=False)
     tags: List[str] | None = None
 
@@ -171,6 +171,8 @@ def process_child(element: PageElement) -> Bookmark | BookmarkFolder | None:
             warnings.warn(f"unexpected tag {element.name}\n{element[:1000]}")
             # raise ValueError(f"unexpected tag {element.name}")
             return None
+
+    return None
 
 
 def process_bookmark_file(data: str) -> BookmarkFolder:

@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass, field
 
 import dateparser
-import rake_nltk
+import rake_nltk # type: ignore[import]
 import requests
 import yaml
 from bs4 import BeautifulSoup  # type: ignore[import]
