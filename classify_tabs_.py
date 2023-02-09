@@ -10,7 +10,16 @@ from generate_continuation import generate_continuation
 from preprocess_urls import get_url_meta
 
 def extract_tags(continuation: str) -> list[str]:
-    return continuation.split(", ")
+    output: list[str] = [
+        tag.strip()
+        for tag in continuation.split(",")
+    ]
+
+    assert output[-1].endswith("]"), "continuation does not end with ]"
+    output[-1] = output[-1][:-1]
+
+    return output
+
 
 
 def generate_prompt(url: str, base_prompt: str):
