@@ -1,3 +1,4 @@
+.openai_key
 data/**
 test_data/transient/**
 venv/
